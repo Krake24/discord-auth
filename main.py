@@ -2,11 +2,13 @@ from flask import Flask, request, redirect
 import requests
 import os
 import json
-from replit import db
+import shelve
+
+db = shelve.open("db", flag="c", writeback=True)
 
 app = Flask(__name__)
 
-discord_login_url = "https://discord.com/api/oauth2/authorize?client_id=1002659405025788035&redirect_uri=https%3A%2F%2Fdiscord-auth.krake24.repl.co%2Fcallback&response_type=code&scope=identify"
+discord_login_url = "https://discord.com/api/oauth2/authorize?client_id=1074450436414787594&redirect_uri=https%3A%2F%2Fstatic.164.158.34.188.clients.your-server.de%2Fcallback&response_type=code&scope=identify"
 
 if not 'logins' in db:
     db['logins'] = {}
@@ -65,12 +67,12 @@ def login():
 
 def exchange_code(code, state):
     data = {
-        'client_id': '1002659405025788035',
+        'client_id': '1074450436414787594',
         'client_secret': os.environ['discord.secret'],
         'grant_type': 'authorization_code',
         'code': code,
         'state': state,
-        'redirect_uri': 'https://discord-auth.krake24.repl.co/callback'
+        'redirect_uri': 'https://static.164.158.34.188.clients.your-server.de/callback'
     }
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     r = requests.post('https://discord.com/api/v10/oauth2/token',
@@ -86,19 +88,6 @@ def exchange_code(code, state):
     result = r.json()
     print(result)
     db['logins'][state] = result['user']
-
-    try:
-        id = db['logins'][state]['id']
-        print("calling: " +
-              "https://ot3d-bot-prod-d3bot-s29oax.mo4.mogenius.io/user/" + id +
-              "/tps")
-        r = requests.get(
-            "https://ot3d-bot-prod-d3bot-s29oax.mo4.mogenius.io/user/" + id +
-            "/tps")
-        content = r.json()
-        db['logins'][state]['tps'] = content
-    except:
-        print("could not find tps state")
 
     return redirect(db['callbacks'][state], 302)
 
